@@ -1,6 +1,6 @@
 cd /home/ec2-user/deploy &&
-chmod +x airflow.sh
 mkdir -p ./dags ./logs ./plugins &&
-echo -e "AIRFLOW_UID=$(id -u)" > .env &&
-docker-compose up airflow-init &&
-docker-compose up
+cp /home/ec2-user/.env.tmp /home/ec2-user/deploy/
+#docker-compose up airflow-init &&
+#docker-compose up
+docker-compose restart airflow-init

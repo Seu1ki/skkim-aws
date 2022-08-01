@@ -31,10 +31,11 @@ with DAG(
             task_id='download_from_s3',
             python_callable=download_from_s3,
             op_kwargs={
-                'key': 'data-dir/도로교통공단_도로종류별 기상상태별 교통사고 통계_20211231.csv',
-                #'key': 'data-dir/function_durations_percentiles.anon.d01.csv',
+                #'key': 'data-dir/도로교통공단_도로종류별 기상상태별 교통사고 통계_20211231.csv',
+                'key': 'data-dir/function_durations_percentiles.anon.d01.csv',
                 'bucket_name': 'skkim-bucket-02',
-                'local_path': '../data/'
+                #'local_path': '../data/'
+                'local_path': './'
             }
         )
 
@@ -50,8 +51,8 @@ with DAG(
             task_id='upload_to_s3',
             python_callable=upload_to_s3,
             op_kwargs={
-                'filename': '../data/function_durations_percentiles.anon.d01.csv',
-                'key': 'data-dir/function_durations_percentiles.anon.d01.csv',
+                'filename': './function_durations_percentiles.anon.d01.csv',
+                'key': 'data-dir/new_function_durations_percentiles.anon.d01.csv',
                 'bucket_name': 'skkim-bucket-02'
             }
         )
