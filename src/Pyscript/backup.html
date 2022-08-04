@@ -1,0 +1,33 @@
+<html>
+    <head>
+      <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
+      <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
+      <py-env>
+- pymysql
+- sqlalchemy
+      </py-env>
+    </head>
+
+  <body>
+    <py-script> print('Hello world!') </py-script>
+      <h1>Let's plot random numbers</h1>
+    <div id="plot"></div>
+    <py-script>
+	    from datetime import datetime
+	    from sqlalchemy import types, create_engine
+	    import pymysql
+
+	    username = "admin"
+	    host = "skkim-db.cshvzopeiwd9.ap-northeast-2.rds.amazonaws.com"
+	    host = "skkim-db.cshvzopeiwd9.ap-northeast-2.rds.amazonaws.com"
+	    port = 3306
+	    database = "skkim_db"
+	    password = "intern19"
+	    
+	    #conn = pymysql.connect(host=host, user=username, passwd=password, db=database, port=port, use_unicode=True, charset='utf8')
+	    conn = create_engine('mysql://admin:intern19@skkim-db.cshvzopeiwd9.ap-northeast-2.rds.amazonaws.com:3306/skkim_db')
+	    now = datetime.now()
+	    now.strftime("%m/%d, %H:%M")
+    </py-script>
+  </body>
+</html>
