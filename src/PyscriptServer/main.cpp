@@ -11,8 +11,8 @@ int main(int argc, char* argv[])
 
 	Query tester;
 
-	std::thread t{&Query::initTimer, &tester, interval, &Query::getInfo};
-	t.detach();
+	std::thread t1{&Query::initTimer, &tester, interval, &Query::getInfo};
+	t1.detach();
 
 	while(1);    
 	return 0;
