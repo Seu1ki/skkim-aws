@@ -30,6 +30,13 @@ def get_mysql():
         csv_out = csv.writer(out)
         for row in res:
             csv_out.writerow(row)
+def create_mysql():
+    data = pd.read_csv(local_file)
+    hook = MySqlHook(mysql_conn_id='mysql_default')
+    msg = "CREATE TABLE " + table_name + "("
+    for i in data.columns:
+        msg += (i + " int")
+    hook.run(msg)
 
 def insert_mysql():
     hook = MySqlHook(mysql_conn_id='mysql_default')
@@ -56,8 +63,8 @@ with DAG(
             task_id='download_from_s3',
             python_callable=download_from_s3,
             op_kwargs={
-                'key': 'dir-skkim/rds-input.csv',
-                'bucket_name': 'skkim-airflow-s3',
+                'key': 'data-dir/function_durations_percentiles.anon.d01.csv',
+                'bucket_name': 'skkim-bucket-02',
                 'local_path': './'
             }
         )
@@ -66,7 +73,7 @@ with DAG(
             task_id='rename_file',
             python_callable=rename_file,
             op_kwargs={
-                'new_name': './data/rds-input.csv'
+                'new_name': './function_durations_percentiles.anon.d01.csv'
             }
         )
 
@@ -74,17 +81,20 @@ with DAG(
             task_id='upload_to_s3',
             python_callable=upload_to_s3,
             op_kwargs={
-                'filename': './data/rds-output.csv',
-                'key': 'dir-skkim/skkim-output.csv',
-                'bucket_name': 'skkim-airflow-s3'
+                'filename': './function_durations_percentiles.anon.d01.csv',
+                'key': 'data-dir/function_durations_percentiles.anon.d01.csv',
+                'bucket_name': 'skkim-bucket-02'
             }
         )
  
+        task_create_mysql = PythonOperator(
+            task_id='create_table',
+            python_callable=create_mysql,
+        )
         task_insert_to_mysql = PythonOperator(
             task_id='insert_rds',
             python_callable=insert_mysql,
         )
-
         task_get_from_mysql = PythonOperator(
             task_id='get_rds',
             python_callable=get_mysql,
@@ -94,9 +104,7 @@ with DAG(
             python_callable=truncate_mysql,
         )
 
-        task_download_from_s3 >> task_rename_file >> task_truncate_mysql >> task_insert_to_mysql >> task_get_from_mysql >> task_upload_to_s3 
-        
-
+        task_download_from_s3 >> task_rename_file >> task_truncate_mysql >> task_insert_to_mysql >> task_get_from_mysql >> task_upload_to_s3
 
 
 
