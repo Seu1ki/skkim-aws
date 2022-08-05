@@ -7,6 +7,14 @@ import os
 import requests
 import csv
 
+def get_data_from_url(url: str, outfile: str) -> None:
+    req = requests.get(url)
+    req.encoding='euc-kr'
+    url_content = req.content.decode('euc-kr')
+    csv_file = open(outfile,'wb')
+    csv_file.write(url_content.encode('utf-8'))
+    csv_file.close()
+
 def upload_to_s3(filename: str, key: str, bucket_name: str) -> None:
     hook = S3Hook('aws_default')
     hook.load_file(filename=filename, key=key, bucket_name=bucket_name, replace=True)
@@ -47,7 +55,6 @@ def insert_mysql():
     LINES TERMINATED BY '\n'; 
     """)
 
-
 def truncate_mysql():
     hook = MySqlHook(mysql_conn_id='mysql_default')
     hook.run("TRUNCATE TABLE s3_rds_test")
@@ -59,6 +66,16 @@ with DAG(
         start_date=datetime(2022, 3, 1),
         catchup=False,
     ) as dag:
+        task_download_from_url = PythonOperator(
+            task_id='get_data_from_url',
+            python_callable=get_data_from_url,
+            op_kwargs={
+                'filename': './new_l0.csv',
+                'url': 'https://www.data.go.kr/cmm/cmm/fileDownload.do?fileDetailSn=1&atchFileId=FILE_000000002316643&dataNm=%EB%8F%84%EB%A1%9C%EA%B5%90%ED%86%B5%EA%B3%B5%EB%8B%A8_%EB%8F%84%EB%A1%9C%EC%A2%85%EB%A5%98%EB%B3%84_%EA%B8%B0%EC%83%81%EC%83%81%ED%83%9C%EB%B3%84_%EA%B5%90%ED%86%B5%EC%82%AC%EA%B3%A0%282013%29'
+            }
+        )
+
+
         task_download_from_s3 = PythonOperator(
             task_id='download_from_s3',
             python_callable=download_from_s3,
@@ -104,7 +121,8 @@ with DAG(
             python_callable=truncate_mysql,
         )
 
-        task_download_from_s3 >> task_rename_file >> task_truncate_mysql >> task_insert_to_mysql >> task_get_from_mysql >> task_upload_to_s3
+        task_dwonload_from_url
+        #task_download_from_s3 >> task_rename_file >> task_truncate_mysql >> task_insert_to_mysql >> task_get_from_mysql >> task_upload_to_s3
 
 
 
