@@ -65,6 +65,7 @@ x-airflow-common:
     AIRFLOW__CORE__DEFAULT_TIMEZONE: Asia/Seoul
     AIRFLOW_CONN_MYSQL_DEFAULT: mysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DB_NAME}
   volumes:
+    - ./airflow.cfg:/opt/airflow/airflow.cfg
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
