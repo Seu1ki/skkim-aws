@@ -55,12 +55,11 @@ def get_mysql():
         csv_out = csv.writer(out)
         for row in res:
             csv_out.writerow(row)
-def create_mysql():
-    data = pd.read_csv(local_file)
+
+def create_mysql(table_name: str, table_col: str):
     hook = MySqlHook(mysql_conn_id='mysql_default')
-    msg = "CREATE TABLE " + table_name + "("
-    for i in data.columns:
-        msg += (i + " int")
+    msg = f"CREATE TABLE if not exists {table_name} " + table_col
+    print("skkim debug", msg)
     hook.run(msg)
 
 
@@ -79,20 +78,47 @@ def sync_index(year: str):
                 break
         if change_flag is 0:
             new_data.drop(labels=idx, axis=1, inplace=True)
-    return {'new': new_data, 'last': last_data}
+    return new_data, last_data
 
-def calculate_increase(ti, year: str):
-    #new_data, last_data = ti.xcom_pull(task_ids=['sync_index'])
-    new_data = ti.xcom_pull(task_ids=['sync_index'])['new']
-    last_data = ti.xcom_pull(task_ids=['sync_index'])['last']
+def calculate_increase(ti):
+    new_data, last_data = ti.xcom_pull(task_ids=['sync_index'])[0]
     res_data = pd.concat([new_data.iloc[:,0:2],new_data.iloc[:,2:] - last_data.iloc[:,2:]],axis=1)
     return res_data
 
-def insert_mysql(table: str):
-    data = ti.xcom_pull(task_ids=['calculate_increase'])
-    data.to_csv('./tmp.csv')
+def predict_risk(ti, year:str):
+    # 5-year: 2017, 2018, 2019, 2020, 2021
+    new_data, last_data = ti.xcom_pull(task_ids=['sync_index'])[0]
+    past_data = []
+    for i in [4,3,2]:
+        past_data.append(pd.read_csv('data'+str(int(year)-i)+'.csv', delimiter=',',encoding='utf-8'))
+    past_data.append(last_data)
+    past_data.append(new_data)
+    return new_data #TODO return predict dataframe
+
+def select_risk(ti, pre_task: str):
+    data = ti.xcom_pull(task_ids=[pre_task])[0]
+    road = data.columns[0]
+    column = data.columns[1]
+    results=[]
+    for weather in set(data.iloc[:,1]):
+        con = data[column] == weather
+        filtered_df = data.loc[con,:]
+        tmp = filtered_df.iloc[:,3:].max() #사망자수, ... , 부상신고자수
+        max_idx = filtered_df[tmp.idxmax()].argmax()
+        results.append([weather, tmp.max(), data.loc[max_idx, road], tmp.idxmax()])
+    res = pd.DataFrame(results, columns=['Weather','Num','Road','Accident'])
+    return res
+
+def insert_mysql(ti, table_name: str):
+    if table_name == "increase_table":
+        data = ti.xcom_pull(task_ids=['select_increase_risk'])[0]
+    elif table_name == "predict_table":
+        data = ti.xcom_pull(task_ids=['select_predict_risk'])[0]
+
     hook = MySqlHook(mysql_conn_id='mysql_default')
-    sql_query = "LOAD DATA LOCAL INFILE './tmp.csv' INTO TABLE "+table+" FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n';"
+    
+    for idx, row in data.iterrows():
+        sql_query = f"INSERT INTO {table_name} (Weather text, Num int, Road text, Accident text) " + str(tuple(row.values))
     hook.run(sql_query)
 
 def truncate_mysql():
@@ -166,6 +192,8 @@ with DAG(
 
         start_task = PythonOperator(task_id="start_task", python_callable=empty_function)
         end_get_task = PythonOperator(task_id="end_get_task", python_callable=empty_function)
+        start_db_task = PythonOperator(task_id="start_db_task", python_callable=empty_function)
+        end_db_task = PythonOperator(task_id="end_db_task", python_callable=empty_function)
 
         task_sync_index = PythonOperator(
             task_id='sync_index',
@@ -178,29 +206,67 @@ with DAG(
         task_cal_increase = PythonOperator(
             task_id='calculate_increase',
             python_callable=calculate_increase,
+        )
+        task_predict = PythonOperator(
+            task_id='predict_risk',
+            python_callable=predict_risk,
             op_kwargs={
                 'year': year
             }
         )
-
-        task_insert_to_mysql = PythonOperator(
-            task_id='insert_mysql',
+        task_select_increase = PythonOperator(
+            task_id='select_increase_risk',
+            python_callable=select_risk,
+            op_kwargs={
+                'pre_task': 'calculate_increase',
+            }
+        )
+        task_select_predict = PythonOperator(
+            task_id='select_predict_risk',
+            python_callable=select_risk,
+            op_kwargs={
+                'pre_task': 'predict_risk',
+            }
+        )
+        task_create_increase = PythonOperator(
+            task_id='create_increase_table',
+            python_callable=create_mysql,
+            op_kwargs={
+                'table_name': 'increase_table',
+                'table_col': '(Weather text, Num int, Road text, Accident text)'
+            }
+        )
+        task_insert_to_increase = PythonOperator(
+            task_id='insert_increase',
             python_callable=insert_mysql,
             op_kwargs={
-                'table': 'increase'
+                'table_name': 'increase_table'
+            }
+        )
+        task_create_predict = PythonOperator(
+            task_id='create_predict_table',
+            python_callable=create_mysql,
+            op_kwargs={
+                'table_name': 'predict_table',
+                'table_col': '(Weather text, Num int, Road text, Accident text)'
+            }
+        )
+        task_insert_to_predict = PythonOperator(
+            task_id='insert_predict',
+            python_callable=insert_mysql,
+            op_kwargs={
+                'table_name': 'predict_table'
             }
         )
 
         chain(start_task, task_download_from_url,task_rename_file, task_upload_to_s3,end_get_task)
         chain(start_task, download_task_list, rename_task_list, end_get_task)
-        chain(end_get_task, task_sync_index, task_cal_increase, task_insert_to_mysql)
+        chain(end_get_task, task_sync_index, start_db_task)
+        chain(start_db_task, task_cal_increase, task_select_increase, task_create_increase, task_insert_to_increase, end_db_task)
+        chain(start_db_task, task_predict, task_select_predict, task_create_predict, task_insert_to_predict, end_db_task)
 
 
         '''
-        task_create_mysql = PythonOperator(
-            task_id='create_table',
-            python_callable=create_mysql,
-        )
         task_insert_to_mysql = PythonOperator(
             task_id='insert_rds',
             python_callable=insert_mysql,
