@@ -59,9 +59,11 @@ def get_mysql():
 def create_mysql(table_name: str, table_col: str):
     hook = MySqlHook(mysql_conn_id='mysql_default')
     msg = f"CREATE TABLE if not exists {table_name} " + table_col
-    print("skkim debug", msg)
     hook.run(msg)
 
+def truncate_mysql(table_name: str):
+    hook = MySqlHook(mysql_conn_id='mysql_default')
+    hook.run(f"TRUNCATE TABLE {table_name}")
 
 def sync_index(year: str):
     new_data = pd.read_csv('data'+year+'.csv', delimiter=',',encoding='utf-8')
@@ -95,6 +97,35 @@ def predict_risk(ti, year:str):
     past_data.append(new_data)
     return new_data #TODO return predict dataframe
 
+def load_accumulate(table_name: str):
+    hook = MySqlHook(mysql_conn_id='mysql_default')
+    sql_query = f"SELECT * FROM {table_name}"
+    return hook.get_pandas_df(sql_query)
+
+def calculate_accumulate(ti):
+    accum_data = ti.xcom_pull(task_ids=['load_accumulate'])[0]
+    new_data, last_data = ti.xcom_pull(task_ids=['sync_index'])[0]
+    for kor,eng in zip(new_data.columns,['Road', 'Weather', 'Accident', 'Death', 'Serious', 'Minor', 'Injured']):
+        new_data.rename(columns={kor:eng}, inplace=True)
+    print("seulki debug acc", accum_data)
+    print("seulki debug new", new_data)
+    if accum_data.empty:
+        return new_data
+    else:
+        res_data = pd.concat([new_data.iloc[:,0:2],new_data.iloc[:,2:] + accum_data.iloc[:,2:]],axis=1)
+        print("seulki debug sum",res_data)
+        return res_data
+
+def update_accumulate(ti, table_name: str):
+    data = ti.xcom_pull(task_ids=['calculate_accumulate'])[0]
+    hook = MySqlHook(mysql_conn_id='mysql_default')
+    for idx, row in data.iterrows():
+        sql_query = f"INSERT INTO {table_name} (Road, Weather, Accident, Death, Serious, Minor, Injured) VALUES " + str(tuple(row.values))
+        print("seulki debug" , sql_query)
+        hook.run(sql_query)
+
+
+
 def select_risk(ti, pre_task: str):
     data = ti.xcom_pull(task_ids=[pre_task])[0]
     road = data.columns[0]
@@ -118,12 +149,10 @@ def insert_mysql(ti, table_name: str):
     hook = MySqlHook(mysql_conn_id='mysql_default')
     
     for idx, row in data.iterrows():
-        sql_query = f"INSERT INTO {table_name} (Weather text, Num int, Road text, Accident text) " + str(tuple(row.values))
-    hook.run(sql_query)
+        sql_query = f"INSERT INTO {table_name} (Weather, Num, Road, Accident) VALUES " + str(tuple(row.values))
+        print("seulki debug" , sql_query)
+        hook.run(sql_query)
 
-def truncate_mysql():
-    hook = MySqlHook(mysql_conn_id='mysql_default')
-    hook.run("TRUNCATE TABLE s3_rds_test")
 
 
 with DAG(
@@ -258,12 +287,60 @@ with DAG(
                 'table_name': 'predict_table'
             }
         )
+        task_init_increase = PythonOperator(
+            task_id='init_increase',
+            python_callable=truncate_mysql,
+            op_kwargs={
+                'table_name': 'increase_table'
+            }
+        )
+        task_init_predict = PythonOperator(
+            task_id='init_predict',
+            python_callable=truncate_mysql,
+            op_kwargs={
+                'table_name': 'predict_table'
+            }
+        )
+        task_check_table = PythonOperator(
+            task_id='check_accumulate_table',
+            python_callable=create_mysql,
+            op_kwargs={
+                'table_name': 'accum_table',
+                'table_col': '(Road text, Weather text, Accident int, Death int, Serious int, Minor int, Injured int )'
+            }
+        )
+        task_load_accumulate = PythonOperator(
+            task_id='load_accumulate',
+            python_callable=load_accumulate,
+            op_kwargs={
+                'table_name': 'accum_table',
+            }
+        )
+        task_calculate_accumulate = PythonOperator(
+            task_id='calculate_accumulate',
+            python_callable=calculate_accumulate,
+        )
 
+        task_init_accumulate = PythonOperator(
+            task_id='init_accumulate',
+            python_callable=truncate_mysql,
+            op_kwargs={
+                'table_name': 'accum_table'
+            }
+        )
+        task_update_accumulate = PythonOperator(
+            task_id='update_accumulate',
+            python_callable=update_accumulate,
+            op_kwargs={
+                'table_name': 'accum_table',
+            }
+        )
         chain(start_task, task_download_from_url,task_rename_file, task_upload_to_s3,end_get_task)
         chain(start_task, download_task_list, rename_task_list, end_get_task)
         chain(end_get_task, task_sync_index, start_db_task)
-        chain(start_db_task, task_cal_increase, task_select_increase, task_create_increase, task_insert_to_increase, end_db_task)
-        chain(start_db_task, task_predict, task_select_predict, task_create_predict, task_insert_to_predict, end_db_task)
+        chain(start_db_task, task_cal_increase, task_select_increase, task_create_increase, task_init_increase, task_insert_to_increase, end_db_task)
+        chain(start_db_task, task_predict, task_select_predict, task_create_predict, task_init_predict, task_insert_to_predict, end_db_task)
+        chain(start_db_task, task_check_table, task_load_accumulate, task_calculate_accumulate, task_init_accumulate, task_update_accumulate, end_db_task)
 
 
         '''
@@ -274,10 +351,6 @@ with DAG(
         task_get_from_mysql = PythonOperator(
             task_id='get_rds',
             python_callable=get_mysql,
-        )
-        task_truncate_mysql = PythonOperator(
-            task_id='truncate_rds',
-            python_callable=truncate_mysql,
         )
         '''
 
