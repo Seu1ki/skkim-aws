@@ -1,0 +1,3 @@
+[submodule "src/PyscriptServer/pyscript-pwa-example"]
+	path = src/PyscriptServer/pyscript-pwa-example
+	url = https://github.com/mikeckennedy/pyscript-pwa-example.git
