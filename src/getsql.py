@@ -43,8 +43,19 @@ def accum_data():
     curs.execute(sql)
     get_list = curs.fetchall()
     db_data = pd.DataFrame(get_list, columns = ['Road', 'Weather', 'Accident', 'Death', 'Serious', 'Minor', 'Injured'])
-    db_data.plot.barh()
+    print(db_data)
+    before=[0]*7
+    for i in db_data.columns[3:]:
+        tmp_y = db_data[i].tolist()
+        plt.bar(range(len(tmp_y)),tmp_y,bottom=before)
+        before = [x+y for x,y in zip(before,tmp_y)]
+    import numpy as np
+    #plt.xticks(np.arange(0,7),['a','b','c','d','e','f','g'])
+    plt.xticks(np.arange(0,7),db_data['Road'].tolist())
+    print(np.arange(0,7),db_data['Road'].tolist())
+    plt.legend(db_data.columns.tolist()[3:])
     plt.show()
+
     conn.close()
 
 if __name__=="__main__":
