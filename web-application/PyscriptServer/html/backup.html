@@ -17,14 +17,13 @@
 	    from sqlalchemy import types, create_engine
 	    import pymysql
 
-	    username = "admin"
-	    host = "skkim-db.cshvzopeiwd9.ap-northeast-2.rds.amazonaws.com"
-	    port = 3306
-	    database = "skkim_db"
-	    password = "intern19"
-	    
-	    #conn = pymysql.connect(host=host, user=username, passwd=password, db=database, port=port, use_unicode=True, charset='utf8')
-	    conn = create_engine('mysql://admin:intern19@skkim-db.cshvzopeiwd9.ap-northeast-2.rds.amazonaws.com:3306/skkim_db')
+	    host=MYSQL_ENDPOINT
+	    user=MYSQL_USER
+	    password=MYSQL_PASSWORD
+	    db=MYSQL_DATABASE
+
+	    db_connection_str = 'mysql+pymysql://'+user+':'+password+'@'+host+'/'+db
+	    conn = create_engine(db_connection_str)
 	    now = datetime.now()
 	    now.strftime("%m/%d, %H:%M")
     </py-script>

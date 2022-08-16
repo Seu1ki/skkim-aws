@@ -30,10 +30,10 @@ void Query::getInfo()
 	MYSQL_RES* result;
 	MYSQL_ROW row;
 
-	char DB_HOST[] = "skkim-db.cshvzopeiwd9.ap-northeast-2.rds.amazonaws.com";
-	char DB_USER[] = "admin";
-	char DB_PASS[] = "intern19";
-	char DB_NAME[] = "skkim_db";
+	char DB_HOST[] = MYSQL_ENDPOINT;
+	char DB_USER[] = MYSQL_USER;
+	char DB_PASS[] = MYSQL_PASSWORD;
+	char DB_NAME[] = MYSQL_DATABASE;
 	char sql[1024];
 
 

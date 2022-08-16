@@ -3,10 +3,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 def weather_data():
-    conn = pymysql.connect(host='skkim-db.cshvzopeiwd9.ap-northeast-2.rds.amazonaws.com',
-            user='admin',
-            password='intern19',
-            db='skkim_db',
+    conn = pymysql.connect(host=MYSQL_ENDPOINT,
+            user=MYSQL_USER,
+            password=MYSQL_PASSWORD,
+            db=MYSQL_DATABASE,
             charset='utf8')
     today_weather = '맑음'
     curs = conn.cursor()
@@ -31,10 +31,10 @@ def weather_data():
 
 
 def accum_data():
-    conn = pymysql.connect(host='skkim-db.cshvzopeiwd9.ap-northeast-2.rds.amazonaws.com',
-            user='admin',
-            password='intern19',
-            db='skkim_db',
+    conn = pymysql.connect(host=MYSQL_ENDPOINT,
+            user=MYSQL_USER,
+            password=MYSQL_PASSWORD,
+            db=MYSQL_DATABASE,
             charset='utf8')
     today_weather = '맑음'
 

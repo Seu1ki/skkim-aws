@@ -9,7 +9,12 @@ url = 'https://www.data.go.kr/cmm/cmm/fileDownload.do?fileDetailSn=1&atchFileId=
 outfile = 'L0_file.csv'
 
 #db info
-db_connection_str = 'mysql+pymysql://admin:intern19@skkim-db.cshvzopeiwd9.ap-northeast-2.rds.amazonaws.com:3306/skkim_db'
+host=MYSQL_ENDPOINT
+user=MYSQL_USER
+password=MYSQL_PASSWORD
+db=MYSQL_DATABASE
+     
+db_connection_str = 'mysql+pymysql://'+user+':'+password+'@'+host+'/'+db
 db_connection = create_engine(db_connection_str)
 conn = db_connection.connect()
 table_name = 'accum_sum'

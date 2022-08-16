@@ -17,13 +17,12 @@ def index():
 def weather_get_data():
     naver_weather, naver_temp = get_weather()
     data = get_weather_report(naver_weather,naver_temp)
-    conn = pymysql.connect(host='skkim-db.cshvzopeiwd9.ap-northeast-2.rds.amazonaws.com',
-            user='admin',
-            password='intern19',
-            db='skkim_db',
+    conn = pymysql.connect(host=MYSQL_ENDPOINT,
+            user=MYSQL_USER,
+            password=MYSQL_PASSWORD,
+            db=MYSQL_DATABASE,
             charset='utf8')
     curs = conn.cursor()
-    #today_weather = "맑음"
     today_weather = data['kor']
     data['today_weather'] = today_weather
 
@@ -45,10 +44,11 @@ def weather_get_data():
 def weather_get_accum():
     naver_weather,naver_temp = get_weather()
     data = get_weather_report(naver_weather, naver_temp)
-    conn = pymysql.connect(host='skkim-db.cshvzopeiwd9.ap-northeast-2.rds.amazonaws.com',
-            user='admin',
-            password='intern19',
-            db='skkim_db',
+
+    conn = pymysql.connect(host=MYSQL_ENDPOINT,
+            user=MYSQL_USER,
+            password=MYSQL_PASSWORD,
+            db=MYSQL_DATABASE,
             charset='utf8')
     curs = conn.cursor()
 
