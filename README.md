@@ -1,8 +1,7 @@
 ## Project using AWS (amazon web service)
 
-The project activities are divided into two parts:   
-part1. Data processing application   
-part2. Web application   
+The project activities are divided into two parts [Data processing application + Web application].   
+
 ![architecture_aws](https://user-images.githubusercontent.com/63331703/184807652-708365cb-5f76-46fc-a9c2-d0ae6a6d2a5e.png)
 
 ### PART1. Data processing application   
