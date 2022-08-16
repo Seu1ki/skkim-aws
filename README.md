@@ -1,5 +1,5 @@
 # skkim-aws
-* airflow needs <.env> with
+* airflow needs <.env> with   
 AIRFLOW_UID=1000
 AWS_ACCESS_KEY=<AWS_ACCESS_KEY>
 AWS_SECRET_KEY=<AWS_SECRET_KEY>
