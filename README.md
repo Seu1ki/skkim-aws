@@ -2,13 +2,13 @@
 
 The project activities are divided into two parts:   
 ### PART1. Data processing application   
-Data processing application is based on Apache Airflow, an open-source workflow management platform for data pipelines.   
-Information is extracted by analyzing data based on statistical data of public data.
+Data processing application is based on Apache Airflow, an open-source workflow management platform for data pipelines. Information is extracted by analyzing data based on statistical data of public data.
 
-*src 0: Traffic accidents by road type and climate condition <https://www.data.go.kr/>
-*res 0: the event most likely to occur
-*res 1: Increment rate of the largest increase compared to the previous year
-*res 2: cumulative number of incidents by road type
+* src 0: Traffic accidents by road type and climate condition <https://www.data.go.kr/>
+* res 0: the event most likely to occur
+* res 1: Increment rate of the largest increase compared to the previous year
+* res 2: cumulative number of incidents by road type
+
 The data pipeline operation of airflow is written in data-pipeline/README.md.
 > airflow needs <.env> with   
 ```
