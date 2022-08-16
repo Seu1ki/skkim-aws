@@ -27,5 +27,13 @@ DB_DB_NAME=<RDS_DB_NAME>
 
 ### PART2. Web application   
 The web application server provides visualization of database query results.   
-It is based on Flask, a micro-web framework written in Python that can be written in a single file.
-
+It is based on pyscript PWA Example <https://github.com/mikeckennedy/pyscript-pwa-example.git> from @mikeckennedy, using Flask, a micro-web framework written in Python that can be written in a single file.
+```diff
+Implement real weather visualization
+- random weather
++ get today weather from Meteorological Agency website
+Implement query to database and visualization information
++ [text] the event most likely to occur
++ [text] Increment rate of the largest increase compared to the previous year
++ [bar-chart] cumulative number of incidents by road type
+```
