@@ -95,7 +95,9 @@ def predict_risk(ti, year:str):
         past_data.append(pd.read_csv('data'+str(int(year)-i)+'.csv', delimiter=',',encoding='utf-8'))
     past_data.append(last_data)
     past_data.append(new_data)
-    return new_data #TODO return predict dataframe
+
+    #TODO return predict dataframe
+    return new_data 
 
 def load_accumulate(table_name: str):
     hook = MySqlHook(mysql_conn_id='mysql_default')

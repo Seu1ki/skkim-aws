@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+
+
+    <link rel="stylesheet" href="/static/css/site.css"/>
+    <title>PyPWA Weather</title>
+    <link href="/static/fonts/NanumGothic.tff" />
+    <link rel="manifest" href="/static/manifest.json" />
+
+    <link rel="stylesheet" href="/static/pyscript/pyscript.css"/>
+    <script defer src="/static/pyscript/pyscript.js"></script>
+    <py-config>
+        - autoclose_loader: true
+        - runtimes:
+            -
+                src: "/static/pyodide/pyodide.js"
+                name: pyodide-0.20
+                lang: python
+    </py-config>
+    <py-env>
+        - matplotlib
+        - pandas
+        - paths:
+            - /static/fonts/NanumGothic.ttf
+            - /static/python/client.py
+            - /static/python/weather_api.py
+            - /static/python/skkim.py
+    </py-env>
+</head>
+<body id="the_body">
+<main>
+    <nav>
+	    <h1><strong>Today Weather</strong>
+        </h1>
+        <ul>
+            <li><a id="refresh">refresh</a></li>
+        </ul>
+    </nav>
+    <div id="weather" class="hidden">
+        <div id="image-container">
+            <img id="image" src="#"/>
+        </div>
+        <div id="temp">
+
+        </div>
+        <div id="forecast">
+
+        </div>
+    <div style="clear: both;"></div>
+    <div id="lineplot"></div>
+</main>
+<py-script src="/static/python/client.py"></py-script>
+<py-script src="/static/python/skkim.py"></py-script>
+<script src="/static/js/pwa-scaffold.js"></script>
+</body>
+</html>
