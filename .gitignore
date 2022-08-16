@@ -1,4 +1,4 @@
-.env
-logs/
-plugins/
+data-pipeline/.env
+data-pipeline/logs/
+data-pipeline/plugins/
 *.log
